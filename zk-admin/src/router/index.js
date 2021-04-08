@@ -542,6 +542,29 @@ export const asyncRoutes = [
     ]
   },
   {
+    path: '/zk-home',
+    component: Layout,
+    redirect: 'noredirect',
+    alwaysShow: true,
+    name: 'zkHome',
+    meta: {
+      title: '官网管理',
+      icon: 'chart'
+    },
+    children: [
+      {
+        path: 'user',
+        component: () => import('@/views/stat/user'),
+        name: 'statUser',
+        meta: {
+          perms: ['GET /admin/web/getWebManagement'],
+          title: '网站基本信息',
+          noCache: true
+        }
+      }
+    ]
+  },
+  {
     path: 'external-link',
     component: Layout,
     redirect: 'noredirect',
