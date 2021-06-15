@@ -2,13 +2,15 @@ package com.xf.project.admin.controller;
 
 import com.xf.project.admin.annotation.RequiresPermissionsDesc;
 import com.xf.project.admin.service.LogHelper;
-import com.xf.project.db.domain.ZkAdmin;
-import com.xf.project.db.service.ZkAdminService;
+import com.xf.project.db.domain.SysAdmin;
+import com.xf.project.db.service.SysAdminService;
 import com.xf.project.framework.util.RegexUtil;
 import com.xf.project.framework.util.ResponseUtil;
 import com.xf.project.framework.util.bcrypt.BCryptPasswordEncoder;
 import com.xf.project.framework.validator.Order;
 import com.xf.project.framework.validator.Sort;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.shiro.SecurityUtils;
@@ -23,7 +25,7 @@ import javax.validation.constraints.NotNull;
 import java.util.List;
 
 import static com.xf.project.admin.util.AdminResponseCode.*;
-
+@Api(tags = "11000.管理员操作服务")
 @RestController
 @RequestMapping("/admin/admin")
 @Validated
@@ -31,23 +33,24 @@ public class AdminAdminController {
     private final Log logger = LogFactory.getLog(AdminAdminController.class);
 
     @Autowired
-    private ZkAdminService adminService;
+    private SysAdminService adminService;
     @Autowired
     private LogHelper logHelper;
 
     @RequiresPermissions("admin:admin:list")
     @RequiresPermissionsDesc(menu = {"系统管理", "管理员管理"}, button = "查询")
     @GetMapping("/list")
+    @ApiOperation(value = "查询")
     public Object list(String username,
                        @RequestParam(defaultValue = "1") Integer page,
                        @RequestParam(defaultValue = "10") Integer limit,
                        @Sort @RequestParam(defaultValue = "add_time") String sort,
                        @Order @RequestParam(defaultValue = "desc") String order) {
-        List<ZkAdmin> adminList = adminService.querySelective(username, page, limit, sort, order);
+        List<SysAdmin> adminList = adminService.querySelective(username, page, limit, sort, order);
         return ResponseUtil.okList(adminList);
     }
 
-    private Object validate(ZkAdmin admin) {
+    private Object validate(SysAdmin admin) {
         String name = admin.getUsername();
         if (StringUtils.isEmpty(name)) {
             return ResponseUtil.badArgument();
@@ -65,14 +68,15 @@ public class AdminAdminController {
     @RequiresPermissions("admin:admin:create")
     @RequiresPermissionsDesc(menu = {"系统管理", "管理员管理"}, button = "添加")
     @PostMapping("/create")
-    public Object create(@RequestBody ZkAdmin admin) {
+    @ApiOperation(value = "添加")
+    public Object create(@RequestBody SysAdmin admin) {
         Object error = validate(admin);
         if (error != null) {
             return error;
         }
 
         String username = admin.getUsername();
-        List<ZkAdmin> adminList = adminService.findAdmin(username);
+        List<SysAdmin> adminList = adminService.findAdmin(username);
         if (adminList.size() > 0) {
             return ResponseUtil.fail(ADMIN_NAME_EXIST, "管理员已经存在");
         }
@@ -89,15 +93,17 @@ public class AdminAdminController {
     @RequiresPermissions("admin:admin:read")
     @RequiresPermissionsDesc(menu = {"系统管理", "管理员管理"}, button = "详情")
     @GetMapping("/read")
+    @ApiOperation(value = "详情")
     public Object read(@NotNull Integer id) {
-        ZkAdmin admin = adminService.findById(id);
+        SysAdmin admin = adminService.findById(id);
         return ResponseUtil.ok(admin);
     }
 
     @RequiresPermissions("admin:admin:update")
     @RequiresPermissionsDesc(menu = {"系统管理", "管理员管理"}, button = "编辑")
     @PostMapping("/update")
-    public Object update(@RequestBody ZkAdmin admin) {
+    @ApiOperation(value = "编辑")
+    public Object update(@RequestBody SysAdmin admin) {
         Object error = validate(admin);
         if (error != null) {
             return error;
@@ -122,7 +128,8 @@ public class AdminAdminController {
     @RequiresPermissions("admin:admin:delete")
     @RequiresPermissionsDesc(menu = {"系统管理", "管理员管理"}, button = "删除")
     @PostMapping("/delete")
-    public Object delete(@RequestBody ZkAdmin admin) {
+    @ApiOperation(value = "删除")
+    public Object delete(@RequestBody SysAdmin admin) {
         Integer anotherAdminId = admin.getId();
         if (anotherAdminId == null) {
             return ResponseUtil.badArgument();
@@ -130,7 +137,7 @@ public class AdminAdminController {
 
         // 管理员不能删除自身账号
         Subject currentUser = SecurityUtils.getSubject();
-        ZkAdmin currentAdmin = (ZkAdmin) currentUser.getPrincipal();
+        SysAdmin currentAdmin = (SysAdmin) currentUser.getPrincipal();
         if (currentAdmin.getId().equals(anotherAdminId)) {
             return ResponseUtil.fail(ADMIN_DELETE_NOT_ALLOWED, "管理员不能删除自己账号");
         }

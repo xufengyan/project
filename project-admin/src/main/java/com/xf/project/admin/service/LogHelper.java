@@ -1,8 +1,8 @@
 package com.xf.project.admin.service;
 
-import com.xf.project.db.domain.ZkAdmin;
-import com.xf.project.db.domain.ZkLog;
-import com.xf.project.db.service.ZkLogService;
+import com.xf.project.db.domain.SysAdmin;
+import com.xf.project.db.domain.SysLog;
+import com.xf.project.db.service.SysLogService;
 import com.xf.project.framework.util.IpUtil;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
@@ -31,7 +31,7 @@ public class LogHelper {
     public static final  Integer LOG_TYPE_OTHER = 3;
 
     @Autowired
-    private ZkLogService logService;
+    private SysLogService logService;
 
     public void logGeneralSucceed(String action) {
         logAdmin(LOG_TYPE_GENERAL, action, true, "", "");
@@ -83,11 +83,11 @@ public class LogHelper {
     }
 
     public void logAdmin(Integer type, String action, Boolean succeed, String result, String comment) {
-        ZkLog log = new ZkLog();
+        SysLog log = new SysLog();
 
         Subject currentUser = SecurityUtils.getSubject();
         if (currentUser != null) {
-            ZkAdmin admin = (ZkAdmin) currentUser.getPrincipal();
+            SysAdmin admin = (SysAdmin) currentUser.getPrincipal();
             if (admin != null) {
                 log.setAdmin(admin.getUsername());
             } else {

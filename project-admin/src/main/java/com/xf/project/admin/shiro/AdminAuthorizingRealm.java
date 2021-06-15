@@ -1,10 +1,10 @@
 package com.xf.project.admin.shiro;
 
 
-import com.xf.project.db.domain.ZkAdmin;
-import com.xf.project.db.service.ZkAdminService;
-import com.xf.project.db.service.ZkPermissionService;
-import com.xf.project.db.service.ZkRoleService;
+import com.xf.project.db.domain.SysAdmin;
+import com.xf.project.db.service.SysAdminService;
+import com.xf.project.db.service.SysPermissionService;
+import com.xf.project.db.service.SysRoleService;
 import com.xf.project.framework.util.bcrypt.BCryptPasswordEncoder;
 import org.apache.shiro.authc.*;
 import org.apache.shiro.authz.AuthorizationException;
@@ -22,11 +22,11 @@ import java.util.Set;
 public class AdminAuthorizingRealm extends AuthorizingRealm {
 
     @Autowired
-    private ZkAdminService adminService;
+    private SysAdminService adminService;
     @Autowired
-    private ZkRoleService roleService;
+    private SysRoleService roleService;
     @Autowired
-    private ZkPermissionService permissionService;
+    private SysPermissionService permissionService;
 
     @Override
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
@@ -34,7 +34,7 @@ public class AdminAuthorizingRealm extends AuthorizingRealm {
             throw new AuthorizationException("PrincipalCollection method argument cannot be null.");
         }
 
-        ZkAdmin admin = (ZkAdmin) getAvailablePrincipal(principals);
+        SysAdmin admin = (SysAdmin) getAvailablePrincipal(principals);
         Integer[] roleIds = admin.getRoleIds();
         Set<String> roles = roleService.queryByIds(roleIds);
         Set<String> permissions = permissionService.queryByRoleIds(roleIds);
@@ -58,12 +58,12 @@ public class AdminAuthorizingRealm extends AuthorizingRealm {
             throw new AccountException("密码不能为空");
         }
 
-        List<ZkAdmin> adminList = adminService.findAdmin(username);
+        List<SysAdmin> adminList = adminService.findAdmin(username);
         Assert.state(adminList.size() < 2, "同一个用户名存在两个账户");
         if (adminList.size() == 0) {
             throw new UnknownAccountException("找不到用户（" + username + "）的帐号信息");
         }
-        ZkAdmin admin = adminList.get(0);
+        SysAdmin admin = adminList.get(0);
 
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         if (!encoder.matches(password, admin.getPassword())) {

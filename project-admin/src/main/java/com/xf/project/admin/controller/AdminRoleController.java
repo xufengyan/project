@@ -5,16 +5,18 @@ import com.xf.project.admin.util.AdminResponseCode;
 import com.xf.project.admin.util.Permission;
 import com.xf.project.admin.util.PermissionUtil;
 import com.xf.project.admin.vo.PermVo;
-import com.xf.project.db.domain.ZkAdmin;
-import com.xf.project.db.domain.ZkPermission;
-import com.xf.project.db.domain.ZkRole;
-import com.xf.project.db.service.ZkAdminService;
-import com.xf.project.db.service.ZkPermissionService;
-import com.xf.project.db.service.ZkRoleService;
+import com.xf.project.db.domain.SysAdmin;
+import com.xf.project.db.domain.SysPermission;
+import com.xf.project.db.domain.SysRole;
+import com.xf.project.db.service.SysAdminService;
+import com.xf.project.db.service.SysPermissionService;
+import com.xf.project.db.service.SysRoleService;
 import com.xf.project.framework.util.JacksonUtil;
 import com.xf.project.framework.util.ResponseUtil;
 import com.xf.project.framework.validator.Order;
 import com.xf.project.framework.validator.Sort;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
@@ -30,7 +32,7 @@ import java.util.*;
 
 import static com.xf.project.admin.util.AdminResponseCode.ROLE_NAME_EXIST;
 import static com.xf.project.admin.util.AdminResponseCode.ROLE_USER_EXIST;
-
+@Api(tags = "14000.角色管理服务")
 @RestController
 @RequestMapping("/admin/role")
 @Validated
@@ -38,12 +40,13 @@ public class AdminRoleController {
     private final Log logger = LogFactory.getLog(AdminRoleController.class);
 
     @Autowired
-    private ZkRoleService roleService;
+    private SysRoleService roleService;
     @Autowired
-    private ZkPermissionService permissionService;
+    private SysPermissionService permissionService;
     @Autowired
-    private ZkAdminService adminService;
+    private SysAdminService adminService;
 
+    @ApiOperation(value = "角色查询")
     @RequiresPermissions("admin:role:list")
     @RequiresPermissionsDesc(menu = {"系统管理", "角色管理"}, button = "角色查询")
     @GetMapping("/list")
@@ -52,16 +55,17 @@ public class AdminRoleController {
                        @RequestParam(defaultValue = "10") Integer limit,
                        @Sort @RequestParam(defaultValue = "add_time") String sort,
                        @Order @RequestParam(defaultValue = "desc") String order) {
-        List<ZkRole> roleList = roleService.querySelective(name, page, limit, sort, order);
+        List<SysRole> roleList = roleService.querySelective(name, page, limit, sort, order);
         return ResponseUtil.okList(roleList);
     }
 
+    @ApiOperation(value = "角色查询")
     @GetMapping("/options")
     public Object options() {
-        List<ZkRole> roleList = roleService.queryAll();
+        List<SysRole> roleList = roleService.queryAll();
 
         List<Map<String, Object>> options = new ArrayList<>(roleList.size());
-        for (ZkRole role : roleList) {
+        for (SysRole role : roleList) {
             Map<String, Object> option = new HashMap<>(2);
             option.put("value", role.getId());
             option.put("label", role.getName());
@@ -71,16 +75,17 @@ public class AdminRoleController {
         return ResponseUtil.okList(options);
     }
 
+    @ApiOperation(value = "角色详情")
     @RequiresPermissions("admin:role:read")
     @RequiresPermissionsDesc(menu = {"系统管理", "角色管理"}, button = "角色详情")
     @GetMapping("/read")
     public Object read(@NotNull Integer id) {
-        ZkRole role = roleService.findById(id);
+        SysRole role = roleService.findById(id);
         return ResponseUtil.ok(role);
     }
 
 
-    private Object validate(ZkRole role) {
+    private Object validate(SysRole role) {
         String name = role.getName();
         if (StringUtils.isEmpty(name)) {
             return ResponseUtil.badArgument();
@@ -89,10 +94,11 @@ public class AdminRoleController {
         return null;
     }
 
+    @ApiOperation(value = "角色添加")
     @RequiresPermissions("admin:role:create")
     @RequiresPermissionsDesc(menu = {"系统管理", "角色管理"}, button = "角色添加")
     @PostMapping("/create")
-    public Object create(@RequestBody ZkRole role) {
+    public Object create(@RequestBody SysRole role) {
         Object error = validate(role);
         if (error != null) {
             return error;
@@ -107,10 +113,11 @@ public class AdminRoleController {
         return ResponseUtil.ok(role);
     }
 
+    @ApiOperation(value = "角色编辑")
     @RequiresPermissions("admin:role:update")
     @RequiresPermissionsDesc(menu = {"系统管理", "角色管理"}, button = "角色编辑")
     @PostMapping("/update")
-    public Object update(@RequestBody ZkRole role) {
+    public Object update(@RequestBody SysRole role) {
         Object error = validate(role);
         if (error != null) {
             return error;
@@ -120,18 +127,19 @@ public class AdminRoleController {
         return ResponseUtil.ok();
     }
 
+    @ApiOperation(value = "角色删除")
     @RequiresPermissions("admin:role:delete")
     @RequiresPermissionsDesc(menu = {"系统管理", "角色管理"}, button = "角色删除")
     @PostMapping("/delete")
-    public Object delete(@RequestBody ZkRole role) {
+    public Object delete(@RequestBody SysRole role) {
         Integer id = role.getId();
         if (id == null) {
             return ResponseUtil.badArgument();
         }
 
         // 如果当前角色所对应管理员仍存在，则拒绝删除角色。
-        List<ZkAdmin> adminList = adminService.all();
-        for (ZkAdmin admin : adminList) {
+        List<SysAdmin> adminList = adminService.all();
+        for (SysAdmin admin : adminList) {
             Integer[] roleIds = admin.getRoleIds();
             for (Integer roleId : roleIds) {
                 if (id.equals(roleId)) {
@@ -179,6 +187,7 @@ public class AdminRoleController {
      *
      * @return 系统所有权限列表和管理员已分配权限
      */
+    @ApiOperation(value = "权限详情")
     @RequiresPermissions("admin:role:permission:get")
     @RequiresPermissionsDesc(menu = {"系统管理", "角色管理"}, button = "权限详情")
     @GetMapping("/permissions")
@@ -199,6 +208,7 @@ public class AdminRoleController {
      * @param body
      * @return
      */
+    @ApiOperation(value = "权限变更")
     @RequiresPermissions("admin:role:permission:update")
     @RequiresPermissionsDesc(menu = {"系统管理", "角色管理"}, button = "权限变更")
     @PostMapping("/permissions")
@@ -217,10 +227,10 @@ public class AdminRoleController {
         // 先删除旧的权限，再更新新的权限
         permissionService.deleteByRoleId(roleId);
         for (String permission : permissions) {
-            ZkPermission ZkPermission = new ZkPermission();
-            ZkPermission.setRoleId(roleId);
-            ZkPermission.setPermission(permission);
-            permissionService.add(ZkPermission);
+            SysPermission SysPermission = new SysPermission();
+            SysPermission.setRoleId(roleId);
+            SysPermission.setPermission(permission);
+            permissionService.add(SysPermission);
         }
         return ResponseUtil.ok();
     }

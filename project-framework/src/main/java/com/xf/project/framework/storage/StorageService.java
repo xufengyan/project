@@ -1,7 +1,7 @@
 package com.xf.project.framework.storage;
 
-import com.xf.project.db.domain.ZkStorage;
-import com.xf.project.db.service.ZkStorageService;
+import com.xf.project.db.domain.SysStorage;
+import com.xf.project.db.service.SysStorageService;
 import com.xf.project.framework.util.CharUtil;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,7 @@ public class StorageService {
     private String active;
     private Storage storage;
     @Autowired
-    private ZkStorageService zkStorageService;
+    private SysStorageService sysStorageService;
 
     public String getActive() {
         return active;
@@ -44,18 +44,18 @@ public class StorageService {
      * @param contentType   文件类型
      * @param fileName      文件索引名
      */
-    public ZkStorage store(InputStream inputStream, long contentLength, String contentType, String fileName) {
+    public SysStorage store(InputStream inputStream, long contentLength, String contentType, String fileName) {
         String key = generateKey(fileName);
         storage.store(inputStream, contentLength, contentType, key);
 
         String url = generateUrl(key);
-        ZkStorage storageInfo = new ZkStorage();
+        SysStorage storageInfo = new SysStorage();
         storageInfo.setName(fileName);
         storageInfo.setSize((int) contentLength);
         storageInfo.setType(contentType);
         storageInfo.setKey(key);
         storageInfo.setUrl(url);
-        zkStorageService.add(storageInfo);
+        sysStorageService.add(storageInfo);
 
         return storageInfo;
     }
@@ -65,11 +65,11 @@ public class StorageService {
         String suffix = originalFilename.substring(index);
 
         String key = null;
-        ZkStorage storageInfo = null;
+        SysStorage storageInfo = null;
 
         do {
             key = CharUtil.getRandomString(20) + suffix;
-            storageInfo = zkStorageService.findByKey(key);
+            storageInfo = sysStorageService.findByKey(key);
         }
         while (storageInfo != null);
 

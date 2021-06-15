@@ -1,12 +1,14 @@
 package com.xf.project.admin.controller;
 
 import com.xf.project.admin.annotation.RequiresPermissionsDesc;
-import com.xf.project.db.domain.ZkStorage;
-import com.xf.project.db.service.ZkStorageService;
+import com.xf.project.db.domain.SysStorage;
+import com.xf.project.db.service.SysStorageService;
 import com.xf.project.framework.storage.StorageService;
 import com.xf.project.framework.util.ResponseUtil;
 import com.xf.project.framework.validator.Order;
 import com.xf.project.framework.validator.Sort;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
@@ -25,6 +27,7 @@ import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.List;
 
+@Api(tags = "15000.对象存储服务")
 @RestController
 @RequestMapping("/admin/storage")
 @Validated
@@ -34,8 +37,10 @@ public class AdminStorageController {
     @Autowired
     private StorageService storageService;
     @Autowired
-    private ZkStorageService zkStorageService;
+    private SysStorageService sysStorageService;
 
+
+    @ApiOperation(value = "查询")
     @RequiresPermissions("admin:storage:list")
     @RequiresPermissionsDesc(menu = {"系统管理", "对象存储"}, button = "查询")
     @GetMapping("/list")
@@ -44,50 +49,54 @@ public class AdminStorageController {
                        @RequestParam(defaultValue = "10") Integer limit,
                        @Sort @RequestParam(defaultValue = "add_time") String sort,
                        @Order @RequestParam(defaultValue = "desc") String order) {
-        List<ZkStorage> storageList = zkStorageService.querySelective(key, name, page, limit, sort, order);
+        List<SysStorage> storageList = sysStorageService.querySelective(key, name, page, limit, sort, order);
         return ResponseUtil.okList(storageList);
     }
 
+    @ApiOperation(value = "上传")
     @RequiresPermissions("admin:storage:create")
     @RequiresPermissionsDesc(menu = {"系统管理", "对象存储"}, button = "上传")
     @PostMapping("/create")
     public Object create(@RequestParam("file") MultipartFile file) throws IOException {
         String originalFilename = file.getOriginalFilename();
-        ZkStorage zkStorage = storageService.store(file.getInputStream(), file.getSize(),
+        SysStorage sysStorage = storageService.store(file.getInputStream(), file.getSize(),
                 file.getContentType(), originalFilename);
-        return ResponseUtil.ok(zkStorage);
+        return ResponseUtil.ok(sysStorage);
     }
 
+    @ApiOperation(value = "详情")
     @RequiresPermissions("admin:storage:read")
     @RequiresPermissionsDesc(menu = {"系统管理", "对象存储"}, button = "详情")
     @PostMapping("/read")
     public Object read(@NotNull Integer id) {
-        ZkStorage storageInfo = zkStorageService.findById(id);
+        SysStorage storageInfo = sysStorageService.findById(id);
         if (storageInfo == null) {
             return ResponseUtil.badArgumentValue();
         }
         return ResponseUtil.ok(storageInfo);
     }
 
+    @ApiOperation(value = "编辑")
     @RequiresPermissions("admin:storage:update")
     @RequiresPermissionsDesc(menu = {"系统管理", "对象存储"}, button = "编辑")
     @PostMapping("/update")
-    public Object update(@RequestBody ZkStorage zkStorage) {
-        if (zkStorageService.update(zkStorage) == 0) {
+    public Object update(@RequestBody SysStorage sysStorage) {
+        if (sysStorageService.update(sysStorage) == 0) {
             return ResponseUtil.updatedDataFailed();
         }
-        return ResponseUtil.ok(zkStorage);
+        return ResponseUtil.ok(sysStorage);
     }
 
+    @ApiOperation(value = "删除")
     @RequiresPermissions("admin:storage:delete")
     @RequiresPermissionsDesc(menu = {"系统管理", "对象存储"}, button = "删除")
     @PostMapping("/delete")
-    public Object delete(@RequestBody ZkStorage zkStorage) {
-        String key = zkStorage.getKey();
+    public Object delete(@RequestBody SysStorage sysStorage) {
+        String key = sysStorage.getKey();
         if (StringUtils.isEmpty(key)) {
             return ResponseUtil.badArgument();
         }
-        zkStorageService.deleteByKey(key);
+        sysStorageService.deleteByKey(key);
         storageService.delete(key);
         return ResponseUtil.ok();
     }
@@ -97,17 +106,18 @@ public class AdminStorageController {
      * @param key 存储对象key
      * @return
      */
+    @ApiOperation(value = "文件详情")
     @GetMapping("/fetch/{key:.+}")
 //    @GetMapping("/fetch")
     public ResponseEntity<Resource> fetch(@PathVariable String key) {
-        ZkStorage zkStorage = zkStorageService.findByKey(key);
+        SysStorage sysStorage = sysStorageService.findByKey(key);
         if (key == null) {
             return ResponseEntity.notFound().build();
         }
         if (key.contains("../")) {
             return ResponseEntity.badRequest().build();
         }
-        String type = zkStorage.getType();
+        String type = sysStorage.getType();
         MediaType mediaType = MediaType.parseMediaType(type);
 
         Resource file = storageService.loadAsResource(key);
@@ -122,9 +132,10 @@ public class AdminStorageController {
      * @param key 存储对象key
      * @return
      */
+    @ApiOperation(value = "下载")
     @GetMapping("/download/{key:.+}")
     public ResponseEntity<Resource> download(@PathVariable String key) {
-        ZkStorage zkStorage = zkStorageService.findByKey(key);
+        SysStorage sysStorage = sysStorageService.findByKey(key);
         if (key == null) {
             return ResponseEntity.notFound().build();
         }
@@ -132,7 +143,7 @@ public class AdminStorageController {
             return ResponseEntity.badRequest().build();
         }
 
-        String type = zkStorage.getType();
+        String type = sysStorage.getType();
         MediaType mediaType = MediaType.parseMediaType(type);
 
         Resource file = storageService.loadAsResource(key);

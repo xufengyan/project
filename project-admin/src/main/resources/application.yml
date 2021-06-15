@@ -15,5 +15,16 @@ logging:
     org.linlinjava.litemall.admin:  DEBUG
     org.linlinjava.litemall:  ERROR
 
+#swagger:
+#  production: false
+
+# swagger
 swagger:
-  production: false
+  enable: true
+  basePackage: com.xf.project
+  contactEmail:
+  contactName: cyBlog
+  contactUrl:
+  projectName: 博客后台管理端接口文档
+  projectDesc: Restful风格接口
+  projectVersion: v1.0

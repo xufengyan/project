@@ -4,13 +4,15 @@ import com.google.code.kaptcha.Producer;
 import com.xf.project.admin.service.LogHelper;
 import com.xf.project.admin.util.Permission;
 import com.xf.project.admin.util.PermissionUtil;
-import com.xf.project.db.domain.ZkAdmin;
-import com.xf.project.db.service.ZkAdminService;
-import com.xf.project.db.service.ZkPermissionService;
-import com.xf.project.db.service.ZkRoleService;
+import com.xf.project.db.domain.SysAdmin;
+import com.xf.project.db.service.SysAdminService;
+import com.xf.project.db.service.SysPermissionService;
+import com.xf.project.db.service.SysRoleService;
 import com.xf.project.framework.util.IpUtil;
 import com.xf.project.framework.util.JacksonUtil;
 import com.xf.project.framework.util.ResponseUtil;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.shiro.SecurityUtils;
@@ -37,7 +39,7 @@ import java.util.*;
 
 import static com.xf.project.admin.util.AdminResponseCode.*;
 
-
+@Api(tags = "12000.登录操作服务")
 @RestController
 @RequestMapping("/admin/auth")
 @Validated
@@ -45,17 +47,18 @@ public class AdminAuthController {
     private final Log logger = LogFactory.getLog(AdminAuthController.class);
 
     @Autowired
-    private ZkAdminService adminService;
+    private SysAdminService adminService;
     @Autowired
-    private ZkRoleService roleService;
+    private SysRoleService roleService;
     @Autowired
-    private ZkPermissionService permissionService;
+    private SysPermissionService permissionService;
     @Autowired
     private LogHelper logHelper;
 
     @Autowired
     private Producer kaptchaProducer;
 
+    @ApiOperation(value = "获取验证码")
     @GetMapping("/kaptcha")
     public Object kaptcha(HttpServletRequest request) {
         String kaptcha = doKaptcha(request);
@@ -85,6 +88,7 @@ public class AdminAuthController {
     /*
      *  { username : value, password : value }
      */
+    @ApiOperation(value = "登录")
     @PostMapping("/login")
     public Object login(@RequestBody String body, HttpServletRequest request) {
         String username = JacksonUtil.parseString(body, "username");
@@ -120,7 +124,7 @@ public class AdminAuthController {
         }
 
         currentUser = SecurityUtils.getSubject();
-        ZkAdmin admin = (ZkAdmin) currentUser.getPrincipal();
+        SysAdmin admin = (SysAdmin) currentUser.getPrincipal();
         admin.setLastLoginIp(IpUtil.getIpAddr(request));
         admin.setLastLoginTime(LocalDateTime.now());
         adminService.updateById(admin);
@@ -143,6 +147,7 @@ public class AdminAuthController {
      */
     @RequiresAuthentication
     @PostMapping("/logout")
+    @ApiOperation(value = "登出")
     public Object logout() {
         Subject currentUser = SecurityUtils.getSubject();
 
@@ -154,9 +159,10 @@ public class AdminAuthController {
 
     @RequiresAuthentication
     @GetMapping("/info")
+    @ApiOperation(value = "初始化当前用户权限")
     public Object info() {
         Subject currentUser = SecurityUtils.getSubject();
-        ZkAdmin admin = (ZkAdmin) currentUser.getPrincipal();
+        SysAdmin admin = (SysAdmin) currentUser.getPrincipal();
 
         Map<String, Object> data = new HashMap<>();
         data.put("name", admin.getUsername());
