@@ -142,9 +142,9 @@ public class AdminAuthController {
         return ResponseUtil.ok(result);
     }
 
-    /*
-     *
-     */
+    /**
+     * 登出
+     * */
     @RequiresAuthentication
     @PostMapping("/logout")
     @ApiOperation(value = "登出")
@@ -157,6 +157,10 @@ public class AdminAuthController {
     }
 
 
+    /**
+     * 初始化当前用户权限
+     * @return
+     */
     @RequiresAuthentication
     @GetMapping("/info")
     @ApiOperation(value = "初始化当前用户权限")
